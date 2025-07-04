@@ -33,7 +33,7 @@ cd ./extensions/chamfer_dist
 python setup.py install --user
 # PointNet++
 pip install "git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib"
-cd ..
+cd ../../../
 ```
 
 ## Datasets

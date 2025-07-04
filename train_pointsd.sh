@@ -14,7 +14,7 @@ export model_dir="" #Path to the stable diffusion checkpoint root
 export dataset_dir="" #Path to the pre-training dataset root
 export img_dir="" #Path to the image dataset root
 
-export output_dir="/data/zhuolong/yiyang/pointsd/checkpoints/${task_name}"
+export output_dir="./checkpoints/${task_name}"
 export log_dir="${project_path}/logs"
 export cache_dir="${project_path}/cached/${task_name}"
 

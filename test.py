@@ -164,8 +164,8 @@ def get_ckpt(ckpt):
 # Load the model
 def validate_model(model,dtype,npoint=1024):
     device = 'cuda'
-    train = ModelNetDataLoader('../sdssl/data/modelnet40_normal_resampled/', split='train',npoint=npoint)
-    test = ModelNetDataLoader('../sdssl/data/modelnet40_normal_resampled/', split='test',npoint=npoint)
+    train = ModelNetDataLoader('Point-MAE/data/ModelNet/modelnet40_normal_resampled/', split='train',npoint=npoint)
+    test = ModelNetDataLoader('Point-MAE/data/ModelNet/modelnet40_normal_resampled/', split='test',npoint=npoint)
     # Calculate the image features
     def get_features(dataset):
         all_features = []
