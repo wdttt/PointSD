@@ -91,10 +91,10 @@ Download: Please download the data from [here](https://shapenet.cs.stanford.edu/
 ```
 |rgb_depth_rendered_images
 ├── .......
-├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_000.png
-├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_012.png
-├── .......
-├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_348.png
+├──04554684-fcc0bdba1a95be2546cde67a6a1ea328
+│  ├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_000.png
+│  ├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_000_depth0001.png
+│  ├── .......
 ├── .......
 ```
 Download: Please download the data from [here](https://huggingface.co/datasets/SFXX/ulip/tree/main/ULIP_Shapenet_Triplets/rgb_depth_rendered_images).

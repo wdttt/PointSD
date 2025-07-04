@@ -109,7 +109,7 @@ class IPAdapter(torch.nn.Module):
                 all_embeds_frz, embeds_frz = self.pc_model_frz(pc, mix)
                 global_tokens_frz = self.global_proj_model_frz(all_embeds_frz)
         else:
-            global_tokens_frz=torch.zeros(pc.shape[0],4,768).to(pc.device)
+            global_tokens_frz = torch.zeros(pc.shape[0],4,768).to(pc.device)
         
         global_tokens = self.global_proj_model(all_embeds)
         if self.local_proj_model is not None:
@@ -459,7 +459,7 @@ class MyDataset(Dataset):
         pc = pc[self.permutation[:num]]
         return pc
     def img_aug(self,image):
-        if not (image.size[0]==self.size and image.size[1]==self.size):
+        if not (image.size[0] == self.size and image.size[1] == self.size):
             new_image = Image.new("RGB", image.size, "WHITE")
             new_image.paste(image, (0, 0), image)
             image = new_image
@@ -479,12 +479,12 @@ class MyDataset(Dataset):
         
         img_idx = img_idx*12 
         if img_idx<10:
-            img_idx='00'+str(img_idx)
+            img_idx ='00'+str(img_idx)
         elif img_idx<100:
-            img_idx='0'+str(img_idx)
+            img_idx ='0'+str(img_idx)
         else:
             img_idx = str(img_idx)
-        image = Image.open(os.path.join(self.img_root,f'{self.ids[i]}_r_{img_idx}.png'))
+        image = Image.open(os.path.join(self.img_root, f'{self.ids[i]}', f'{self.ids[i]}_r_{img_idx}.png'))
         image = self.img_aug(image)
 
         pc = np.load(os.path.join(self.data_root,'shapenet_pc',self.ids[i]+'.npy'))
@@ -667,10 +667,10 @@ def main():
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
     accelerator = Accelerator(
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        mixed_precision=args.mixed_precision,
-        log_with=args.report_to,
-        project_config=accelerator_project_config,
+        gradient_accumulation_steps = args.gradient_accumulation_steps,
+        mixed_precision = args.mixed_precision,
+        log_with = args.report_to,
+        project_config = accelerator_project_config,
     )
 
     if accelerator.distributed_type == DistributedType.DEEPSPEED:
@@ -726,12 +726,12 @@ def main():
         return [deepspeed_plugin.zero3_init_context_manager(enable=False)]
     with ContextManagers(deepspeed_zero_init_disabled_context_manager()):
         vae = AutoencoderKL.from_pretrained(
-            args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision, variant=args.variant
+            args.pretrained_model_name_or_path, subfolder = "vae", revision = args.revision, variant = args.variant
         )
     unet = UNet2DConditionModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, variant=args.variant
+        args.pretrained_model_name_or_path, subfolder = "unet", revision = args.revision, variant = args.variant
     )
-    unet_wrapper=UNetWrapper(unet,base_size=args.resolution,use_attn=False)
+    unet_wrapper = UNetWrapper(unet, base_size = args.resolution, use_attn = False)
     # turn to 1024 64 32
     config_addr = './pointbert/PointTransformer.yaml'
     pc_feat_dims = 768
@@ -744,25 +744,25 @@ def main():
     # Freeze all parameters except for the token embeddings in text encoder
 
     global_proj_model = PCProjModel(
-        cross_attention_dim=768,
-        clip_embeddings_dim=pc_feat_dims,
-        clip_extra_context_tokens=4,
+        cross_attention_dim = 768,
+        clip_embeddings_dim = pc_feat_dims,
+        clip_extra_context_tokens = 4,
     )
     
     if args.run_stage=='stage2':
         local_proj_model = Resampler(
-            dim=768,
-            depth=args.depth,
-            dim_head=64,
-            heads=args.heads,
-            num_queries=1,
-            embedding_dim=pc_feat_dims,
-            output_dim=1280,
-            ff_mult=4,
-            max_seq_len=1,
+            dim = 768,
+            depth = args.depth,
+            dim_head = 64,
+            heads = args.heads,
+            num_queries = 1,
+            embedding_dim = pc_feat_dims,
+            output_dim = 1280,
+            ff_mult = 4,
+            max_seq_len = 1,
         )
     else:
-        local_proj_model=None
+        local_proj_model = None
     attn_procs = {}
     unet_sd = unet.state_dict()
     for i,name in enumerate(unet.attn_processors.keys()):
@@ -788,23 +788,24 @@ def main():
             attn_procs[name].load_state_dict(weights)
     unet.set_attn_processor(attn_procs)
     adapter_modules = torch.nn.ModuleList(unet.attn_processors.values())
-    if args.run_stage=='stage2':
+    if args.run_stage == 'stage2':
         pc_encoder_frz = PointTransformer(config.model)
-        pc_encoder_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt,'ckpt-stage1.pt'),map_location="cuda"))
-        global_proj_model_frz=PCProjModel(
-            cross_attention_dim=768,
-            clip_embeddings_dim=768,
-            clip_extra_context_tokens=4,
+        pc_encoder_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt, 'ckpt-stage1.pt'), map_location="cuda"))
+        global_proj_model_frz = PCProjModel(
+            cross_attention_dim = 768,
+            clip_embeddings_dim = 768,
+            clip_extra_context_tokens = 4,
         )
-        global_proj_model_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt,'global_proj_model.pt'),map_location="cuda"))
-        adapter_modules.load_state_dict(torch.load(os.path.join(args.stage1_ckpt,'adapter_modules.pt'),map_location="cuda"))
+        global_proj_model_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt, 'global_proj_model.pt'), map_location="cuda"))
+        adapter_modules.load_state_dict(torch.load(os.path.join(args.stage1_ckpt, 'adapter_modules.pt'), map_location="cuda"))
         pc_encoder_frz.requires_grad_(False)
         global_proj_model_frz.requires_grad_(False)
         adapter_modules.requires_grad_(False)
         pc_encoder_frz.eval()
         global_proj_model_frz.eval()
-    
-    ip_adapter = IPAdapter(unet_wrapper, pc_encoder, global_proj_model, local_proj_model, adapter_modules)
+        ip_adapter = IPAdapter(unet_wrapper, pc_encoder, global_proj_model, local_proj_model, adapter_modules, pc_encoder_frz, global_proj_model_frz)
+    else:
+        ip_adapter = IPAdapter(unet_wrapper, pc_encoder, global_proj_model, local_proj_model, adapter_modules)
     if args.gradient_checkpointing:
         # Keep unet in train mode if we are using gradient checkpointing to save memory.
         # The dropout cannot be != 0 so it doesn't matter if we are in eval or train mode.
@@ -834,29 +835,28 @@ def main():
             args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes)
 
     params_to_opt = itertools.chain(ip_adapter.pc_model.parameters(), ip_adapter.global_proj_model.parameters(), ip_adapter.adapter_modules.parameters())
-    if args.run_stage=='stage2':
+    if args.run_stage == 'stage2':
         params_to_opt = itertools.chain(params_to_opt, ip_adapter.local_proj_model.parameters())
     optimizer = torch.optim.AdamW(
         params_to_opt,
-        lr=args.learning_rate,
-        betas=(args.adam_beta1, args.adam_beta2),
-        weight_decay=args.adam_weight_decay,
-        eps=args.adam_epsilon,
+        lr = args.learning_rate,
+        betas = (args.adam_beta1, args.adam_beta2),
+        weight_decay = args.adam_weight_decay,
+        eps = args.adam_epsilon,
     )
 
     # Dataset and DataLoaders creation:
     train_dataset = MyDataset(
-        data_root=args.train_data_dir,
-        img_root=args.img_dir,
-        size=args.resolution,
-        center_crop=args.center_crop,
+        data_root = args.train_data_dir,
+        img_root = args.img_dir,
+        size = args.resolution,
+        center_crop = args.center_crop,
         sample_points_num = args.sample_points_num,
         random_view = args.random_view,
         view_idx = args.view_idx,
-        setting="train",
     )
     train_dataloader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers
+        train_dataset, batch_size = args.train_batch_size, shuffle = True, num_workers = args.dataloader_num_workers
     )
     if args.validation_epochs is not None:
         warnings.warn(
@@ -877,12 +877,12 @@ def main():
     args.lr_warmup_steps = args.num_warm_epochs * num_update_steps_per_epoch 
     lr_scheduler = get_scheduler(
         args.lr_scheduler,
-        optimizer=optimizer,
+        optimizer = optimizer,
         #num_warmup_steps=args.lr_warmup_steps * accelerator.num_processes,
         #num_training_steps=args.max_train_steps * accelerator.num_processes,
-        num_warmup_steps=args.lr_warmup_steps,
-        num_training_steps=args.max_train_steps,
-        num_cycles=args.lr_num_cycles,
+        num_warmup_steps = args.lr_warmup_steps,
+        num_training_steps = args.max_train_steps,
+        num_cycles = args.lr_num_cycles,
     )
 
     # Prepare everything with our `accelerator`.
@@ -967,7 +967,7 @@ def main():
     best_acc = 0
     ip_adapter.pc_model.train()
     ip_adapter.global_proj_model.train()
-    if args.run_stage=='stage2':
+    if args.run_stage == 'stage2':
         ip_adapter.local_proj_model.train()
     ip_adapter.adapter_modules.train()
     if args.validation_before_training:
@@ -983,12 +983,11 @@ def main():
         for step, batch in enumerate(train_dataloader):
             with accelerator.accumulate(ip_adapter):
                 # Convert images to latent space
-
                 if args.perform_mix:
                     to_mix = random.random()
                 else:
                     to_mix = 0
-                if to_mix>0.5:
+                if to_mix > 0.5:
                     b,c,h,w = batch["pixel_values"].shape
                     batch["pixel_values"] = batch["pixel_values"].reshape(-1,2,c,h,w)
                     pixel_values_cat_1 = torch.cat([batch["pixel_values"][:,0],batch["pixel_values"][:,1]],dim=-1)
@@ -1041,7 +1040,6 @@ def main():
 
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
-                images = []
                 progress_bar.update(1)
                 global_step += 1
                 if (AcceleratorState().deepspeed_plugin is not None) or accelerator.is_main_process:
@@ -1071,8 +1069,6 @@ def main():
                         os.makedirs(save_path,exist_ok=True)
                         torch.save(ip_adapter.pc_model.state_dict(),save_path+f'/ckpt-{args.run_stage}.pt')
                         torch.save(ip_adapter.global_proj_model.state_dict(), save_path + '/global_proj_model.pt')
-                        #if args.run_stage=='stage2':
-                            #torch.save(ip_adapter.local_proj_model.state_dict(), save_path + '/local_proj_model.pt')
                         torch.save(ip_adapter.adapter_modules.state_dict(),save_path+'/adapter_modules.pt')
                         logger.info(f"Saved state to {save_path}")
                     
@@ -1087,8 +1083,6 @@ def main():
                                 os.makedirs(save_path,exist_ok=True)
                                 torch.save(ip_adapter.pc_model.state_dict(),save_path+f'/ckpt-{args.run_stage}.pt')
                                 torch.save(ip_adapter.global_proj_model.state_dict(),save_path + '/global_proj_model.pt')
-                                #if args.run_stage=='stage2':
-                                    #torch.save(ip_adapter.local_proj_model.state_dict(), save_path + '/local_proj_model.pt')
                                 torch.save(ip_adapter.adapter_modules.state_dict(),save_path+'/adapter_modules.pt')
                         ip_adapter.pc_model.train()
             logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0],"acc":global_acc}

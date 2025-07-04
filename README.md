@@ -33,14 +33,16 @@ cd ./extensions/chamfer_dist
 python setup.py install --user
 # PointNet++
 pip install "git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib"
+
+# Go back to the project root directory
 cd ../../../
 ```
 
 ## Datasets
 See [DATASET.md](./DATASET.md) for details.
 
-## Stabel Diffusion Checkpoint
-We use SD-v1.5 to conduct experiments and you can download it from [here](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5).
+## Stable Diffusion Checkpoint
+We use SD-v1.5 to conduct experiments and you can download the checkpoint [here](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5).
 
 ## PointSD Models
 | Task              | Dataset        | Config                                                               | Acc.       | Download                                                                                     |
@@ -64,11 +66,11 @@ To pre-train PointSD, you need to set `task_name`, `model_dir`, `dataset_dir` an
 ```
 bash train_pointsd.sh
 ```
-For the second training stage, you need to set `run_stage` to `stage2` and set the root of the first stage checkpoint  to `stage1_ckpt` and then run:
+For the second training stage, you need to set `run_stage` to `stage2` and set `stage1_ckpt` to the path of the first stage checkpoint and then run:
 ```
 bash train_pointsd.sh
 ```
-If you use more than one gpu to run, please remember to set [`num_process`](./accelerate_configs/zero2_config.yaml) to the corresponding number of gpus . You can use checkpoint-120000/ckpt-stage2.pt or checkpoint-best/ckpt-stage2.pt for subsequent fine-tuning.
+If you use more than one gpu to run, please remember to set [`num_processes`](./accelerate_configs/zero2_config.yaml) to the corresponding number of gpus . You can use checkpoint-120000/ckpt-stage2.pt or checkpoint-best/ckpt-stage2.pt for subsequent fine-tuning.
 
 
 ## Fine-tuning
