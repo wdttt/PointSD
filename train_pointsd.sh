@@ -6,7 +6,7 @@ export DS_SKIP_CUDA_CHECK=1
 #export WANDB_USERNAME=
 
 export project_name="PointSD"
-export task_name=""
+export task_name="" #experiment name
 export project_path="./PointSD"
 export code_file="train_pointsd.py" 
 

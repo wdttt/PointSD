@@ -59,7 +59,7 @@ We use SD-v1.5 to conduct experiments and you can download it from [here](https:
 | Segmentation | ShapeNetPart | [segmentation](./Point-MAE/segmentation) | 84.5  | 86.1 |[Segmentation](https://github.com/wdttt/PointSD)|
 
 ## Pre-training
-To pre-train PointSD, you need to set `task_name`, `MODEL_NAME` and `DATASET_NAME` in `train_pointsd.sh`. For the first training stage, you need to set `run_stage` to `stage1` and then run:
+To pre-train PointSD, you need to set `task_name`, `model_dir`, `dataset_dir` and `img_dir` in `train_pointsd.sh`. For the first training stage, you need to set `run_stage` to `stage1` and then run:
 ```
 bash train_pointsd.sh
 ```
