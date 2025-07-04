@@ -1,0 +1,8 @@
+argparse
+opencv-python
+pyyaml
+scipy
+tensorboardX
+tqdm
+transforms3d
+scikit-learn

@@ -1,0 +1,3 @@
+# ninja log v5
+0	16907	1751612633107194934	/home/zhuolong/tmp/pointsd/Point-MAE/extensions/chamfer_dist/build/temp.linux-x86_64-cpython-39/chamfer_cuda.o	4386bac366bd8826
+0	46177	1751612662362989166	/home/zhuolong/tmp/pointsd/Point-MAE/extensions/chamfer_dist/build/temp.linux-x86_64-cpython-39/chamfer.o	b4f5b886c46863fc
