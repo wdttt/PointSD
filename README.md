@@ -50,13 +50,13 @@ We use SD-v1.5 to conduct experiments and you can download it from [here](https:
 | Classification    | ScanObjectNN   | [finetune_scan_hardest.yaml](./Point-MAE/cfgs/finetune_scan_hardest.yaml) | 90.08%     | [PB_T50_RS](https://github.com/wdttt/PointSD)       |
 | Classification    | ModelNet40 | [finetune_modelnet.yaml](./Point-MAE/cfgs/finetune_modelnet.yaml)         | 93.7%      | [ModelNet40](https://github.com/wdttt/PointSD)     |
 
-| Task              | Dataset    | Config                                   | 5w10s (%)  | 5w20s (%)  | 10w10s (%) | 10w20s (%) | Download                                                                                       |
+| Task              | Dataset    | Config                                   | 5w10s | 5w20s | 10w10s | 10w20s | Download                                                                                       |
 |-------------------|------------|------------------------------------------|------------|------------|------------|------------|------------------------------------------------------------------------------------------------|
-| Few-shot learning | ModelNet40 | [fewshot.yaml](./Point-MAE/cfgs/fewshot.yaml) | 97.7 ± 1.8 | 99.0 ± 0.9 | 93.8±3.6 | 95.9±2.6 | [FewShot](https://github.com/wdttt/PointSD) |
+| Few-shot learning | ModelNet40 | [fewshot.yaml](./Point-MAE/cfgs/fewshot.yaml) | 97.7 ± 1.8% | 99.0 ± 0.9% | 93.8±3.6% | 95.9±2.6% | [FewShot](https://github.com/wdttt/PointSD) |
 
-| Task              | Dataset      | Config                                      | Cls.mIoU  | Insta.mIoU  | Download                                                                                     |
+| Task              | Dataset      | Config                                      | Cls.mIoU | Insta.mIoU | Download                                                                                     |
 |-------------------|--------------|------------------------------------------|------------|------------|------------|
-| Segmentation | ShapeNetPart | [segmentation](./Point-MAE/segmentation) | 84.5  | 86.1 |[Segmentation](https://github.com/wdttt/PointSD)|
+| Segmentation | ShapeNetPart | [segmentation](./Point-MAE/segmentation) | 84.5%  | 86.1% |[Segmentation](https://github.com/wdttt/PointSD)|
 
 ## Pre-training
 To pre-train PointSD, you need to set `task_name`, `model_dir`, `dataset_dir` and `img_dir` in `train_pointsd.sh`. For the first training stage, you need to set `run_stage` to `stage1` and then run:
