@@ -86,3 +86,15 @@ Download: Please download the data from [Point-BERT repo](https://github.com/lul
 ```
 
 Download: Please download the data from [here](https://shapenet.cs.stanford.edu/media/shapenetcore_partanno_segmentation_benchmark_v0_normal.zip). 
+
+### ULIP Image Dataset:
+```
+|rgb_depth_rendered_images
+├── .......
+├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_000.png
+├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_012.png
+├── .......
+├──04554684-fcc0bdba1a95be2546cde67a6a1ea328_r_348.png
+├── .......
+```
+Download: Please download the data from [here](https://huggingface.co/datasets/SFXX/ulip/tree/main/ULIP_Shapenet_Triplets/rgb_depth_rendered_images).

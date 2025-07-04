@@ -10,8 +10,9 @@ export task_name=""
 export project_path="./PointSD"
 export code_file="train_pointsd.py" 
 
-export MODEL_NAME="" #Path to the stable diffusion checkpoint root
-export DATASET_NAME="" #Path to the pre-training dataset root
+export model_dir="" #Path to the stable diffusion checkpoint root
+export dataset_dir="" #Path to the pre-training dataset root
+export img_dir="" #Path to the image dataset root
 
 export output_dir="/data/zhuolong/yiyang/pointsd/checkpoints/${task_name}"
 export log_dir="${project_path}/logs"
@@ -36,7 +37,7 @@ done
 echo $PORT
 
 cd $project_path &&
-CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file $project_path/accelerate_configs/zero2_config.yaml --use_deepspeed \
+CUDA_VISIBLE_DEVICES=<GPUs> accelerate launch --config_file $project_path/accelerate_configs/zero2_config.yaml --use_deepspeed \
     --zero_stage 2 \
     --gradient_clipping 1.0 \
     --zero3_init_flag false \
@@ -44,8 +45,9 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file $project_path/accelerate_
     --mixed_precision no \
     --main_process_port $PORT \
   train_pointsd.py \
-  --pretrained_model_name_or_path=$MODEL_NAME \
-  --train_data_dir=$DATASET_NAME \
+  --pretrained_model_name_or_path=$model_dir \
+  --train_data_dir=$dataset_dir \
+  --img_dir=$img_dir \
   --resolution=64 \
   --num_train_epochs=300 \
   --num_warm_epochs=10 \

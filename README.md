@@ -9,7 +9,7 @@ This is the official implementation of "Harnessing Text-to-Image Diffusion Model
 
 ![img](./figure/PointSD.png)
 
-## Requirements
+## Installation
 
 ```
 # Quick Start
@@ -38,6 +38,9 @@ pip install "git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointn
 ## Datasets
 See [DATASET.md](./DATASET.md) for details.
 
+## Stabel Diffusion Checkpoint
+We use SD-v1.5 to conduct experiments and you can download it from [here](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5).
+
 ## PointSD Models
 | Task              | Dataset        | Config                                                               | Acc.       | Download                                                                                     |
 |-------------------|----------------|----------------------------------------------------------------------|------------|----------------------------------------------------------------------------------------------------------|
@@ -64,10 +67,14 @@ For the second training stage, you need to set `run_stage` to `stage2` and set t
 ```
 bash train_pointsd.sh
 ```
-You can use checkpoint-120000 or checkpoint-best for subsequent fine-tuning.
+If you use more than one gpu to run, please remember to set [`num_process`](./accelerate_configs/zero2_config.yaml) to the corresponding number of gpus . You can use checkpoint-120000 or checkpoint-best for subsequent fine-tuning.
 
 
 ## Fine-tuning
+First, switch to the `Point-MAE` folder:
+```
+cd Point-MAE
+```
 
 Fine-tuning on ScanObjectNN, run:
 ```

@@ -168,6 +168,9 @@ def parse_args():
         "--train_data_dir", type=str, default=None, required=True, help="A folder containing the training data."
     )
     parser.add_argument(
+        "--img_dir", type=str, default=None, required=True, help="A folder containing the image data."
+    )
+    parser.add_argument(
         "--output_dir",
         type=str,
         default="text-inversion-model",
@@ -400,16 +403,17 @@ class MyDataset(Dataset):
     def __init__(
         self,
         data_root,
+        img_root,
         size=512,
         interpolation="bicubic",
         flip_p=0.5,
-        setting="train",
         center_crop=False,
         sample_points_num=1024,
         random_view=False,
         view_idx=0
     ):
         self.data_root = data_root
+        self.img_root = img_root
         self.size = size
         self.center_crop = center_crop
         self.flip_p = flip_p
@@ -473,7 +477,6 @@ class MyDataset(Dataset):
         else:
             img_idx = self.view_idx
         
-        tmp_idx=img_idx
         img_idx = img_idx*12 
         if img_idx<10:
             img_idx='00'+str(img_idx)
@@ -481,7 +484,7 @@ class MyDataset(Dataset):
             img_idx='0'+str(img_idx)
         else:
             img_idx = str(img_idx)
-        image = Image.open(os.path.join('../ulip_data',f'idx_{tmp_idx}/{self.ids[i]}_r_{img_idx}.png'))
+        image = Image.open(os.path.join(self.img_root,f'{self.ids[i]}_r_{img_idx}.png'))
         image = self.img_aug(image)
 
         pc = np.load(os.path.join(self.data_root,'shapenet_pc',self.ids[i]+'.npy'))
@@ -844,6 +847,7 @@ def main():
     # Dataset and DataLoaders creation:
     train_dataset = MyDataset(
         data_root=args.train_data_dir,
+        img_root=args.img_dir,
         size=args.resolution,
         center_crop=args.center_crop,
         sample_points_num = args.sample_points_num,
