@@ -790,7 +790,7 @@ def main():
     adapter_modules = torch.nn.ModuleList(unet.attn_processors.values())
     if args.run_stage=='stage2':
         pc_encoder_frz = PointTransformer(config.model)
-        pc_encoder_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt,'point_bert_pretrained.pt'),map_location="cuda"))
+        pc_encoder_frz.load_state_dict(torch.load(os.path.join(args.stage1_ckpt,'ckpt-stage1.pt'),map_location="cuda"))
         global_proj_model_frz=PCProjModel(
             cross_attention_dim=768,
             clip_embeddings_dim=768,
@@ -1085,10 +1085,10 @@ def main():
                                 best_acc = acc
                                 save_path = os.path.join(args.output_dir, f"checkpoint-best")
                                 os.makedirs(save_path,exist_ok=True)
-                                torch.save(ip_adapter.pc_model.state_dict(),save_path+'/point_bert_pretrained.pt')
+                                torch.save(ip_adapter.pc_model.state_dict(),save_path+f'/ckpt-{args.run_stage}.pt')
                                 torch.save(ip_adapter.global_proj_model.state_dict(),save_path + '/global_proj_model.pt')
-                                if args.run_stage=='stage2':
-                                    torch.save(ip_adapter.local_proj_model.state_dict(), save_path + '/local_proj_model.pt')
+                                #if args.run_stage=='stage2':
+                                    #torch.save(ip_adapter.local_proj_model.state_dict(), save_path + '/local_proj_model.pt')
                                 torch.save(ip_adapter.adapter_modules.state_dict(),save_path+'/adapter_modules.pt')
                         ip_adapter.pc_model.train()
             logs = {"loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0],"acc":global_acc}

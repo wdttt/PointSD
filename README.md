@@ -33,6 +33,7 @@ cd ./extensions/chamfer_dist
 python setup.py install --user
 # PointNet++
 pip install "git+https://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib"
+cd ..
 ```
 
 ## Datasets
@@ -67,7 +68,7 @@ For the second training stage, you need to set `run_stage` to `stage2` and set t
 ```
 bash train_pointsd.sh
 ```
-If you use more than one gpu to run, please remember to set [`num_process`](./accelerate_configs/zero2_config.yaml) to the corresponding number of gpus . You can use checkpoint-120000 or checkpoint-best for subsequent fine-tuning.
+If you use more than one gpu to run, please remember to set [`num_process`](./accelerate_configs/zero2_config.yaml) to the corresponding number of gpus . You can use checkpoint-120000/ckpt-stage2.pt or checkpoint-best/ckpt-stage2.pt for subsequent fine-tuning.
 
 
 ## Fine-tuning

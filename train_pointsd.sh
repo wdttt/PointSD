@@ -7,7 +7,7 @@ export DS_SKIP_CUDA_CHECK=1
 
 export project_name="PointSD"
 export task_name="" #experiment name
-export project_path="./PointSD"
+export project_path="."
 export code_file="train_pointsd.py" 
 
 export model_dir="" #Path to the stable diffusion checkpoint root
