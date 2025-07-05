@@ -463,7 +463,7 @@ def parse_args():
     return args
 
 
-class MyDataset(Dataset):
+class PretrainDataset(Dataset):
     def __init__(
         self,
         data_root,
@@ -1014,7 +1014,7 @@ def main():
     )
 
     # Dataset and DataLoaders creation:
-    train_dataset = MyDataset(
+    train_dataset = PretrainDataset(
         data_root=args.train_data_dir,
         img_root=args.img_dir,
         size=args.resolution,

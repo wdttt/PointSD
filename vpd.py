@@ -1,4 +1,4 @@
-# modified from https://github.com/wl-zhao/VPD/blob/main/vpd/models.py 
+# modified from https://github.com/wl-zhao/VPD/blob/main/vpd/models.py
 import torch as th
 import torch
 import math
@@ -15,14 +15,13 @@ def exists(val):
 
 
 def uniq(arr):
-    return{el: True for el in arr}.keys()
+    return {el: True for el in arr}.keys()
 
 
 def default(val, d):
     if exists(val):
         return val
     return d() if isfunction(d) else d
-
 
 
 def register_attention_control(model, controller):
@@ -36,24 +35,26 @@ def register_attention_control(model, controller):
             k = self.to_k(context)
             v = self.to_v(context)
 
-            q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
+            q, k, v = map(
+                lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v)
+            )
 
-            sim = einsum('b i d, b j d -> b i j', q, k) * self.scale
+            sim = einsum("b i d, b j d -> b i j", q, k) * self.scale
 
             if exists(mask):
-                mask = rearrange(mask, 'b ... -> b (...)')
+                mask = rearrange(mask, "b ... -> b (...)")
                 max_neg_value = -torch.finfo(sim.dtype).max
-                mask = repeat(mask, 'b j -> (b h) () j', h=h)
+                mask = repeat(mask, "b j -> (b h) () j", h=h)
                 sim.masked_fill_(~mask, max_neg_value)
 
             # attention, what we cannot get enough of
             attn = sim.softmax(dim=-1)
-            
-            attn2 = rearrange(attn, '(b h) k c -> h b k c', h=h).mean(0)
+
+            attn2 = rearrange(attn, "(b h) k c -> h b k c", h=h).mean(0)
             controller(attn2, is_cross, place_in_unet)
 
-            out = einsum('b i j, b j d -> b i d', attn, v)
-            out = rearrange(out, '(b h) n d -> b n (h d)', h=h)
+            out = einsum("b i j, b j d -> b i d", attn, v)
+            out = rearrange(out, "(b h) n d -> b n (h d)", h=h)
             return self.to_out(out)
 
         return forward
@@ -69,11 +70,11 @@ def register_attention_control(model, controller):
         controller = DummyController()
 
     def register_recr(net_, count, place_in_unet):
-        #if net_.__class__.__name__ == 'CrossAttention':
-        if 'CrossAttn' in net_.__class__.__name__:
+        # if net_.__class__.__name__ == 'CrossAttention':
+        if "CrossAttn" in net_.__class__.__name__:
             net_.forward = ca_forward(net_, place_in_unet)
             return count + 1
-        elif hasattr(net_, 'children'):
+        elif hasattr(net_, "children"):
             for net__ in net_.children():
                 count = register_recr(net__, count, place_in_unet)
         return count
@@ -92,25 +93,25 @@ def register_attention_control(model, controller):
 
 
 class AttentionControl(abc.ABC):
-    
+
     def step_callback(self, x_t):
         return x_t
-    
+
     def between_steps(self):
         return
-    
+
     @property
     def num_uncond_att_layers(self):
         return 0
-    
+
     @abc.abstractmethod
-    def forward (self, attn, is_cross: bool, place_in_unet: str):
+    def forward(self, attn, is_cross: bool, place_in_unet: str):
         raise NotImplementedError
-    
+
     def __call__(self, attn, is_cross: bool, place_in_unet: str):
         attn = self.forward(attn, is_cross, place_in_unet)
         return attn
-    
+
     def reset(self):
         self.cur_step = 0
         self.cur_att_layer = 0
@@ -124,8 +125,14 @@ class AttentionControl(abc.ABC):
 class AttentionStore(AttentionControl):
     @staticmethod
     def get_empty_store():
-        return {"down_cross": [], "mid_cross": [], "up_cross": [],
-                "down_self": [],  "mid_self": [],  "up_self": []}
+        return {
+            "down_cross": [],
+            "mid_cross": [],
+            "up_cross": [],
+            "down_self": [],
+            "mid_self": [],
+            "up_self": [],
+        }
 
     def forward(self, attn, is_cross: bool, place_in_unet: str):
         key = f"{place_in_unet}_{'cross' if is_cross else 'self'}"
@@ -143,7 +150,9 @@ class AttentionStore(AttentionControl):
         self.step_store = self.get_empty_store()
 
     def get_average_attention(self):
-        average_attention = {key: [item for item in self.step_store[key]] for key in self.step_store}
+        average_attention = {
+            key: [item for item in self.step_store[key]] for key in self.step_store
+        }
         return average_attention
 
     def reset(self):
@@ -161,12 +170,21 @@ class AttentionStore(AttentionControl):
         else:
             self.max_size = max_size
 
+
 def register_hier_output(model):
-    self=model
-    def forward(sample, timestep=None, encoder_hidden_states=None, class_labels=None, return_dict=True, **kwargs):
-        attention_mask=None
-        encoder_attention_mask=None
-        cross_attention_kwargs=None
+    self = model
+
+    def forward(
+        sample,
+        timestep=None,
+        encoder_hidden_states=None,
+        class_labels=None,
+        return_dict=True,
+        **kwargs,
+    ):
+        attention_mask = None
+        encoder_attention_mask = None
+        cross_attention_kwargs = None
         forward_upsample_size = False
         upsample_size = None
 
@@ -178,7 +196,9 @@ def register_hier_output(model):
         aug_emb = None
         if self.class_embedding is not None:
             if class_labels is None:
-                raise ValueError("class_labels should be provided when num_class_embeds > 0")
+                raise ValueError(
+                    "class_labels should be provided when num_class_embeds > 0"
+                )
 
             if self.config.class_embed_type == "timestep":
                 class_labels = self.time_proj(class_labels)
@@ -197,10 +217,13 @@ def register_hier_output(model):
 
         sample = self.conv_in(sample)
         down_block_res_samples = (sample,)
-        out_list=[]
+        out_list = []
         for downsample_block in self.down_blocks:
-            additional_residuals={}
-            if hasattr(downsample_block, "has_cross_attention") and downsample_block.has_cross_attention:
+            additional_residuals = {}
+            if (
+                hasattr(downsample_block, "has_cross_attention")
+                and downsample_block.has_cross_attention
+            ):
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
                     temb=emb,
@@ -210,14 +233,17 @@ def register_hier_output(model):
                     encoder_attention_mask=encoder_attention_mask,
                     **additional_residuals,
                 )
-                #out_list.append(sample)
+                # out_list.append(sample)
             else:
                 sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
-            #out_list.append(sample)
+            # out_list.append(sample)
             down_block_res_samples += res_samples
         out_list.append(sample)
         if self.mid_block is not None:
-            if hasattr(self.mid_block, "has_cross_attention") and self.mid_block.has_cross_attention:
+            if (
+                hasattr(self.mid_block, "has_cross_attention")
+                and self.mid_block.has_cross_attention
+            ):
                 sample = self.mid_block(
                     sample,
                     emb,
@@ -233,14 +259,19 @@ def register_hier_output(model):
             is_final_block = i == len(self.up_blocks) - 1
 
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
-            down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
+            down_block_res_samples = down_block_res_samples[
+                : -len(upsample_block.resnets)
+            ]
 
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
                 upsample_size = down_block_res_samples[-1].shape[2:]
 
-            if hasattr(upsample_block, "has_cross_attention") and upsample_block.has_cross_attention:
+            if (
+                hasattr(upsample_block, "has_cross_attention")
+                and upsample_block.has_cross_attention
+            ):
                 sample = upsample_block(
                     hidden_states=sample,
                     temb=emb,
@@ -258,7 +289,7 @@ def register_hier_output(model):
                     res_hidden_states_tuple=res_samples,
                     upsample_size=upsample_size,
                 )
-            #out_list.append(sample)
+            # out_list.append(sample)
         out_list.append(sample)
         if self.conv_norm_out:
             sample = self.conv_norm_out(sample)
@@ -266,14 +297,24 @@ def register_hier_output(model):
         sample = self.conv_out(sample)
         out_list.append(sample)
         return out_list
-    
-    self.forward=forward
+
+    self.forward = forward
+
 
 class UNetWrapper(nn.Module):
-    def __init__(self, unet, use_attn=True, base_size=512, max_attn_size=None, attn_selector='up_cross+down_cross') -> None:
+    def __init__(
+        self,
+        unet,
+        use_attn=True,
+        base_size=512,
+        max_attn_size=None,
+        attn_selector="up_cross+down_cross",
+    ) -> None:
         super().__init__()
         self.unet = unet
-        self.attention_store = AttentionStore(base_size=base_size // 8, max_size=max_attn_size)
+        self.attention_store = AttentionStore(
+            base_size=base_size // 8, max_size=max_attn_size
+        )
         self.size16 = base_size // 32
         self.size32 = base_size // 16
         self.size64 = base_size // 8
@@ -281,7 +322,7 @@ class UNetWrapper(nn.Module):
         if self.use_attn:
             register_attention_control(unet, self.attention_store)
         register_hier_output(unet)
-        self.attn_selector = attn_selector.split('+')
+        self.attn_selector = attn_selector.split("+")
 
     def forward(self, *args, **kwargs):
         if self.use_attn:
@@ -301,7 +342,7 @@ class UNetWrapper(nn.Module):
         for k in self.attn_selector:
             for up_attn in avg_attn[k]:
                 size = int(math.sqrt(up_attn.shape[1]))
-                attns[size].append(rearrange(up_attn, 'b (h w) c -> b c h w', h=size))
+                attns[size].append(rearrange(up_attn, "b (h w) c -> b c h w", h=size))
         attn16 = torch.stack(attns[self.size16]).mean(0)
         attn32 = torch.stack(attns[self.size32]).mean(0)
         if len(attns[self.size64]) > 0:
@@ -309,4 +350,3 @@ class UNetWrapper(nn.Module):
         else:
             attn64 = None
         return attn16, attn32, attn64
-
