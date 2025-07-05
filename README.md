@@ -47,19 +47,19 @@ We use SD-v1.5 to conduct experiments and you can download the checkpoint [here]
 ## PointSD Models
 | Task              | Dataset        | Config                                                               | Acc.       | Download                                                                                     |
 |-------------------|----------------|----------------------------------------------------------------------|------------|----------------------------------------------------------------------------------------------------------|
-| Pre-training      | ShapeNet       | [train_pointsd.sh](./train_pointsd.sh)                        | N.A.       | [Pre-train](https://github.com/wdttt/PointSD)           |
-| Classification    | ScanObjectNN   | [finetune_scan_objbg.yaml](./Point-MAE/cfgs/finetune_scan_objbg.yaml)     | 95.18%     | [OBJ_BG](https://github.com/wdttt/PointSD)          |
-| Classification    | ScanObjectNN   | [finetune_scan_objonly.yaml](./Point-MAE/cfgs/finetune_scan_objonly.yaml) | 93.63%     | [OBJ_ONLY](https://github.com/wdttt/PointSD)        |
-| Classification    | ScanObjectNN   | [finetune_scan_hardest.yaml](./Point-MAE/cfgs/finetune_scan_hardest.yaml) | 90.08%     | [PB_T50_RS](https://github.com/wdttt/PointSD)       |
-| Classification    | ModelNet40 | [finetune_modelnet.yaml](./Point-MAE/cfgs/finetune_modelnet.yaml)         | 93.7%      | [ModelNet40](https://github.com/wdttt/PointSD)     |
+| Pre-training      | ShapeNet       | [train_pointsd.sh](./train_pointsd.sh)                        | N.A.       | [Pre-train](https://drive.google.com/drive/folders/1Yvu4fxFwKJoYn_8K2782p9bqqeHrBRX_)           |
+| Classification    | ScanObjectNN   | [finetune_scan_objbg.yaml](./Point-MAE/cfgs/finetune_scan_objbg.yaml)     | 95.18%     | [OBJ_BG](https://drive.google.com/drive/folders/10cIUm8v7o1tAKBMuTeNUATzMu8PdY96L)          |
+| Classification    | ScanObjectNN   | [finetune_scan_objonly.yaml](./Point-MAE/cfgs/finetune_scan_objonly.yaml) | 93.63%     | [OBJ_ONLY](https://drive.google.com/drive/folders/1bKFLQU3GRT5heUJ8VU1AEIiZq_J1sCur)        |
+| Classification    | ScanObjectNN   | [finetune_scan_hardest.yaml](./Point-MAE/cfgs/finetune_scan_hardest.yaml) | 90.08%     | [PB_T50_RS](https://drive.google.com/drive/folders/1EXnPIySeGsK1hYYG8poq1Sv1Z6M88C8h)       |
+| Classification    | ModelNet40 | [finetune_modelnet.yaml](./Point-MAE/cfgs/finetune_modelnet.yaml)         | 93.7%      | [ModelNet40](https://drive.google.com/drive/folders/1k0SHUWosTS93Gddq7RH753ga2-PU6i_x)     |
 
 | Task              | Dataset    | Config                                   | 5w10s | 5w20s | 10w10s | 10w20s | Download                                                                                       |
 |-------------------|------------|------------------------------------------|------------|------------|------------|------------|------------------------------------------------------------------------------------------------|
-| Few-shot learning | ModelNet40 | [fewshot.yaml](./Point-MAE/cfgs/fewshot.yaml) | 97.7 ± 1.8% | 99.0 ± 0.9% | 93.8±3.6% | 95.9±2.6% | [FewShot](https://github.com/wdttt/PointSD) |
+| Few-shot learning | ModelNet40 | [fewshot.yaml](./Point-MAE/cfgs/fewshot.yaml) | 97.7 ± 1.8% | 99.0 ± 0.9% | 93.8±3.6% | 95.9±2.6% | [FewShot](https://drive.google.com/drive/folders/1S_QXbWf_aseFyaUqqi8WNqwLPT8jZ79S) |
 
 | Task              | Dataset      | Config                                      | Cls.mIoU | Insta.mIoU | Download                                                                                     |
 |-------------------|--------------|------------------------------------------|------------|------------|------------|
-| Segmentation | ShapeNetPart | [segmentation](./Point-MAE/segmentation) | 84.5%  | 86.1% |[Segmentation](https://github.com/wdttt/PointSD)|
+| Segmentation | ShapeNetPart | [segmentation](./Point-MAE/segmentation) | 84.5%  | 86.1% |[Segmentation](https://drive.google.com/drive/folders/1LNct2kQJSyVGohJQ06cIL_G_iVOhfcg7)|
 
 ## Pre-training
 To pre-train PointSD, you need to set `task_name`, `model_dir`, `dataset_dir` and `img_dir` in `train_pointsd.sh`. For the first training stage, you need to set `run_stage` to `stage1` and then run:

@@ -3,43 +3,48 @@ import torch
 import torch.nn.functional as F
 from pointbert import misc
 
-#from knn_cuda import KNN
+# from knn_cuda import KNN
 
-#knn = KNN(k=4, transpose_mode=False)
+# knn = KNN(k=4, transpose_mode=False)
 
 
 class DGCNN(nn.Module):
     def __init__(self, encoder_channel, output_channel):
         super().__init__()
-        '''
+        """
         K has to be 16
-        '''
+        """
         self.input_trans = nn.Conv1d(encoder_channel, 128, 1)
 
-        self.layer1 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=1, bias=False),
-                                    nn.GroupNorm(4, 256),
-                                    nn.LeakyReLU(negative_slope=0.2)
-                                    )
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(256, 256, kernel_size=1, bias=False),
+            nn.GroupNorm(4, 256),
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
-        self.layer2 = nn.Sequential(nn.Conv2d(512, 512, kernel_size=1, bias=False),
-                                    nn.GroupNorm(4, 512),
-                                    nn.LeakyReLU(negative_slope=0.2)
-                                    )
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=1, bias=False),
+            nn.GroupNorm(4, 512),
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
-        self.layer3 = nn.Sequential(nn.Conv2d(1024, 512, kernel_size=1, bias=False),
-                                    nn.GroupNorm(4, 512),
-                                    nn.LeakyReLU(negative_slope=0.2)
-                                    )
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(1024, 512, kernel_size=1, bias=False),
+            nn.GroupNorm(4, 512),
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
-        self.layer4 = nn.Sequential(nn.Conv2d(1024, 1024, kernel_size=1, bias=False),
-                                    nn.GroupNorm(4, 1024),
-                                    nn.LeakyReLU(negative_slope=0.2)
-                                    )
+        self.layer4 = nn.Sequential(
+            nn.Conv2d(1024, 1024, kernel_size=1, bias=False),
+            nn.GroupNorm(4, 1024),
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
-        self.layer5 = nn.Sequential(nn.Conv1d(2304, output_channel, kernel_size=1, bias=False),
-                                    nn.GroupNorm(4, output_channel),
-                                    nn.LeakyReLU(negative_slope=0.2)
-                                    )
+        self.layer5 = nn.Sequential(
+            nn.Conv1d(2304, output_channel, kernel_size=1, bias=False),
+            nn.GroupNorm(4, output_channel),
+            nn.LeakyReLU(negative_slope=0.2),
+        )
 
     @staticmethod
     def get_graph_feature(coor_q, x_q, coor_k, x_k):
@@ -53,13 +58,20 @@ class DGCNN(nn.Module):
         with torch.no_grad():
             _, idx = knn(coor_k, coor_q)  # bs k np
             assert idx.shape[1] == k
-            idx_base = torch.arange(0, batch_size, device=x_q.device).view(-1, 1, 1) * num_points_k
+            idx_base = (
+                torch.arange(0, batch_size, device=x_q.device).view(-1, 1, 1)
+                * num_points_k
+            )
             idx = idx + idx_base
             idx = idx.view(-1)
         num_dims = x_k.size(1)
         x_k = x_k.transpose(2, 1).contiguous()
         feature = x_k.view(batch_size * num_points_k, -1)[idx, :]
-        feature = feature.view(batch_size, k, num_points_q, num_dims).permute(0, 3, 2, 1).contiguous()
+        feature = (
+            feature.view(batch_size, k, num_points_q, num_dims)
+            .permute(0, 3, 2, 1)
+            .contiguous()
+        )
         x_q = x_q.view(batch_size, num_dims, num_points_q, 1).expand(-1, -1, -1, k)
         feature = torch.cat((feature - x_q, x_q), dim=1)
         return feature
@@ -135,8 +147,8 @@ def square_distance(src, dst):
     B, N, _ = src.shape
     _, M, _ = dst.shape
     dist = -2 * torch.matmul(src, dst.permute(0, 2, 1))
-    dist += torch.sum(src ** 2, -1).view(B, N, 1)
-    dist += torch.sum(dst ** 2, -1).view(B, 1, M)
+    dist += torch.sum(src**2, -1).view(B, N, 1)
+    dist += torch.sum(dst**2, -1).view(B, 1, M)
     return dist
 
 
@@ -148,12 +160,12 @@ class Group(nn.Module):
         # self.knn = KNN(k=self.group_size, transpose_mode=True)
 
     def forward(self, xyz):
-        '''
-            input: B N 3
-            ---------------------------
-            output: B G M 3
-            center : B G 3
-        '''
+        """
+        input: B N 3
+        ---------------------------
+        output: B G M 3
+        center : B G 3
+        """
         batch_size, num_points, _ = xyz.shape
         # fps the centers out
         center = misc.fps(xyz, self.num_group)  # B G 3
@@ -162,11 +174,15 @@ class Group(nn.Module):
         idx = knn_point(self.group_size, xyz, center)  # B G M
         assert idx.size(1) == self.num_group
         assert idx.size(2) == self.group_size
-        idx_base = torch.arange(0, batch_size, device=xyz.device).view(-1, 1, 1) * num_points
+        idx_base = (
+            torch.arange(0, batch_size, device=xyz.device).view(-1, 1, 1) * num_points
+        )
         idx = idx + idx_base
         idx = idx.view(-1)
         neighborhood = xyz.view(batch_size * num_points, -1)[idx, :]
-        neighborhood = neighborhood.view(batch_size, self.num_group, self.group_size, 3).contiguous()
+        neighborhood = neighborhood.view(
+            batch_size, self.num_group, self.group_size, 3
+        ).contiguous()
         # normalize
         neighborhood = neighborhood - center.unsqueeze(2)
         return neighborhood, center
@@ -180,27 +196,29 @@ class Encoder(nn.Module):
             nn.Conv1d(3, 128, 1),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
-            nn.Conv1d(128, 256, 1)
+            nn.Conv1d(128, 256, 1),
         )
         self.second_conv = nn.Sequential(
             nn.Conv1d(512, 512, 1),
             nn.BatchNorm1d(512),
             nn.ReLU(inplace=True),
-            nn.Conv1d(512, self.encoder_channel, 1)
+            nn.Conv1d(512, self.encoder_channel, 1),
         )
 
     def forward(self, point_groups):
-        '''
-            point_groups : B G N 3
-            -----------------
-            feature_global : B G C
-        '''
+        """
+        point_groups : B G N 3
+        -----------------
+        feature_global : B G C
+        """
         bs, g, n, _ = point_groups.shape
         point_groups = point_groups.reshape(bs * g, n, 3)
         # encoder
         feature = self.first_conv(point_groups.transpose(2, 1))  # BG 256 n
         feature_global = torch.max(feature, dim=2, keepdim=True)[0]  # BG 256 1
-        feature = torch.cat([feature_global.expand(-1, -1, n), feature], dim=1)  # BG 512 n
+        feature = torch.cat(
+            [feature_global.expand(-1, -1, n), feature], dim=1
+        )  # BG 512 n
         feature = self.second_conv(feature)  # BG 1024 n
         feature_global = torch.max(feature, dim=2, keepdim=False)[0]  # BG 1024
         return feature_global.reshape(bs, g, self.encoder_channel)
@@ -219,7 +237,7 @@ class Decoder(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(1024, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(1024, 3 * self.num_coarse)
+            nn.Linear(1024, 3 * self.num_coarse),
         )
         self.final_conv = nn.Sequential(
             nn.Conv1d(encoder_channel + 3 + 2, 512, 1),
@@ -228,37 +246,57 @@ class Decoder(nn.Module):
             nn.Conv1d(512, 512, 1),
             nn.BatchNorm1d(512),
             nn.ReLU(inplace=True),
-            nn.Conv1d(512, 3, 1)
+            nn.Conv1d(512, 3, 1),
         )
-        a = torch.linspace(-0.05, 0.05, steps=self.grid_size, dtype=torch.float).view(1, self.grid_size).expand(
-            self.grid_size, self.grid_size).reshape(1, -1)
-        b = torch.linspace(-0.05, 0.05, steps=self.grid_size, dtype=torch.float).view(self.grid_size, 1).expand(
-            self.grid_size, self.grid_size).reshape(1, -1)
-        self.folding_seed = torch.cat([a, b], dim=0).view(1, 2, self.grid_size ** 2)  # 1 2 S
+        a = (
+            torch.linspace(-0.05, 0.05, steps=self.grid_size, dtype=torch.float)
+            .view(1, self.grid_size)
+            .expand(self.grid_size, self.grid_size)
+            .reshape(1, -1)
+        )
+        b = (
+            torch.linspace(-0.05, 0.05, steps=self.grid_size, dtype=torch.float)
+            .view(self.grid_size, 1)
+            .expand(self.grid_size, self.grid_size)
+            .reshape(1, -1)
+        )
+        self.folding_seed = torch.cat([a, b], dim=0).view(
+            1, 2, self.grid_size**2
+        )  # 1 2 S
 
     def forward(self, feature_global):
-        '''
-            feature_global : B G C
-            -------
-            coarse : B G M 3
-            fine : B G N 3
+        """
+        feature_global : B G C
+        -------
+        coarse : B G M 3
+        fine : B G N 3
 
-        '''
+        """
         bs, g, c = feature_global.shape
         feature_global = feature_global.reshape(bs * g, c)
 
         coarse = self.mlp(feature_global).reshape(bs * g, self.num_coarse, 3)  # BG M 3
 
-        point_feat = coarse.unsqueeze(2).expand(-1, -1, self.grid_size ** 2, -1)  # BG (M) S 3
-        point_feat = point_feat.reshape(bs * g, self.num_fine, 3).transpose(2, 1)  # BG 3 N
+        point_feat = coarse.unsqueeze(2).expand(
+            -1, -1, self.grid_size**2, -1
+        )  # BG (M) S 3
+        point_feat = point_feat.reshape(bs * g, self.num_fine, 3).transpose(
+            2, 1
+        )  # BG 3 N
 
-        seed = self.folding_seed.unsqueeze(2).expand(bs * g, -1, self.num_coarse, -1)  # BG 2 M (S)
-        seed = seed.reshape(bs * g, -1, self.num_fine).to(feature_global.device)  # BG 2 N
+        seed = self.folding_seed.unsqueeze(2).expand(
+            bs * g, -1, self.num_coarse, -1
+        )  # BG 2 M (S)
+        seed = seed.reshape(bs * g, -1, self.num_fine).to(
+            feature_global.device
+        )  # BG 2 N
 
-        feature_global = feature_global.unsqueeze(2).expand(-1, -1, self.num_fine)  # BG 1024 N
+        feature_global = feature_global.unsqueeze(2).expand(
+            -1, -1, self.num_fine
+        )  # BG 1024 N
         feat = torch.cat([feature_global, seed, point_feat], dim=1)  # BG C N
 
-        center = coarse.unsqueeze(2).expand(-1, -1, self.grid_size ** 2, -1)  # BG (M) S 3
+        center = coarse.unsqueeze(2).expand(-1, -1, self.grid_size**2, -1)  # BG (M) S 3
         center = center.reshape(bs * g, self.num_fine, 3).transpose(2, 1)  # BG 3 N
 
         fine = self.final_conv(feat) + center  # BG 3 N
@@ -280,11 +318,17 @@ class DiscreteVAE(nn.Module):
 
         self.group_divider = Group(num_group=self.num_group, group_size=self.group_size)
         self.encoder = Encoder(encoder_channel=self.encoder_dims)
-        self.dgcnn_1 = DGCNN(encoder_channel=self.encoder_dims, output_channel=self.num_tokens)
+        self.dgcnn_1 = DGCNN(
+            encoder_channel=self.encoder_dims, output_channel=self.num_tokens
+        )
         self.codebook = nn.Parameter(torch.randn(self.num_tokens, self.tokens_dims))
 
-        self.dgcnn_2 = DGCNN(encoder_channel=self.tokens_dims, output_channel=self.decoder_dims)
-        self.decoder = Decoder(encoder_channel=self.decoder_dims, num_fine=self.group_size)
+        self.dgcnn_2 = DGCNN(
+            encoder_channel=self.tokens_dims, output_channel=self.decoder_dims
+        )
+        self.decoder = Decoder(
+            encoder_channel=self.decoder_dims, num_fine=self.group_size
+        )
         # self.build_loss_func()
 
     # def build_loss_func(self):
@@ -316,18 +360,28 @@ class DiscreteVAE(nn.Module):
         softmax = F.softmax(logits, dim=-1)
         mean_softmax = softmax.mean(dim=1)
         log_qy = torch.log(mean_softmax)
-        log_uniform = torch.log(torch.tensor([1. / self.num_tokens], device=gt.device))
-        loss_klv = F.kl_div(log_qy, log_uniform.expand(log_qy.size(0), log_qy.size(1)), None, None, 'batchmean',
-                            log_target=True)
+        log_uniform = torch.log(torch.tensor([1.0 / self.num_tokens], device=gt.device))
+        loss_klv = F.kl_div(
+            log_qy,
+            log_uniform.expand(log_qy.size(0), log_qy.size(1)),
+            None,
+            None,
+            "batchmean",
+            log_target=True,
+        )
 
         return loss_recon, loss_klv
 
-    def forward(self, inp, temperature=1., hard=False, **kwargs):
+    def forward(self, inp, temperature=1.0, hard=False, **kwargs):
         neighborhood, center = self.group_divider(inp)
         logits = self.encoder(neighborhood)  # B G C
         logits = self.dgcnn_1(logits, center)  # B G N
-        soft_one_hot = F.gumbel_softmax(logits, tau=temperature, dim=2, hard=hard)  # B G N
-        sampled = torch.einsum('b g n, n c -> b g c', soft_one_hot, self.codebook)  # B G C
+        soft_one_hot = F.gumbel_softmax(
+            logits, tau=temperature, dim=2, hard=hard
+        )  # B G N
+        sampled = torch.einsum(
+            "b g n, n c -> b g c", soft_one_hot, self.codebook
+        )  # B G C
         feature = self.dgcnn_2(sampled, center)
         coarse, fine = self.decoder(feature)
 

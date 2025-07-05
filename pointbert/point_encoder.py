@@ -6,10 +6,21 @@ from pointbert.dvae import Group
 from pointbert.dvae import Encoder
 from pointbert.logger import print_log
 import numpy as np
-from pointbert.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
+from pointbert.checkpoint import (
+    get_missing_parameters_message,
+    get_unexpected_parameters_message,
+)
+
 
 class Mlp(nn.Module):
-    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+    def __init__(
+        self,
+        in_features,
+        hidden_features=None,
+        out_features=None,
+        act_layer=nn.GELU,
+        drop=0.0,
+    ):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -28,12 +39,20 @@ class Mlp(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
+    def __init__(
+        self,
+        dim,
+        num_heads=8,
+        qkv_bias=False,
+        qk_scale=None,
+        attn_drop=0.0,
+        proj_drop=0.0,
+    ):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
-        self.scale = qk_scale or head_dim ** -0.5
+        self.scale = qk_scale or head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
@@ -42,8 +61,16 @@ class Attention(nn.Module):
 
     def forward(self, x):
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv[0], qkv[1], qkv[2]  # make torchscript happy (cannot use tensor as tuple)
+        qkv = (
+            self.qkv(x)
+            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .permute(2, 0, 3, 1, 4)
+        )
+        q, k, v = (
+            qkv[0],
+            qkv[1],
+            qkv[2],
+        )  # make torchscript happy (cannot use tensor as tuple)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
@@ -56,19 +83,41 @@ class Attention(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
-                 drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+    def __init__(
+        self,
+        dim,
+        num_heads,
+        mlp_ratio=4.0,
+        qkv_bias=False,
+        qk_scale=None,
+        drop=0.0,
+        attn_drop=0.0,
+        drop_path=0.0,
+        act_layer=nn.GELU,
+        norm_layer=nn.LayerNorm,
+    ):
         super().__init__()
         self.norm1 = norm_layer(dim)
 
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
-        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        self.mlp = Mlp(
+            in_features=dim,
+            hidden_features=mlp_hidden_dim,
+            act_layer=act_layer,
+            drop=drop,
+        )
 
         self.attn = Attention(
-            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
+            dim,
+            num_heads=num_heads,
+            qkv_bias=qkv_bias,
+            qk_scale=qk_scale,
+            attn_drop=attn_drop,
+            proj_drop=drop,
+        )
 
     def forward(self, x):
         x = x + self.drop_path(self.attn(self.norm1(x)))
@@ -77,25 +126,47 @@ class Block(nn.Module):
 
 
 class TransformerEncoder(nn.Module):
-    """ Transformer Encoder without hierarchical structure
-    """
+    """Transformer Encoder without hierarchical structure"""
 
-    def __init__(self, embed_dim=768, depth=4, num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None,
-                 drop_rate=0., attn_drop_rate=0., drop_path_rate=0.):
+    def __init__(
+        self,
+        embed_dim=768,
+        depth=4,
+        num_heads=12,
+        mlp_ratio=4.0,
+        qkv_bias=False,
+        qk_scale=None,
+        drop_rate=0.0,
+        attn_drop_rate=0.0,
+        drop_path_rate=0.0,
+    ):
         super().__init__()
 
-        self.blocks = nn.ModuleList([
-            Block(
-                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                drop=drop_rate, attn_drop=attn_drop_rate,
-                drop_path=drop_path_rate[i] if isinstance(drop_path_rate, list) else drop_path_rate
-            )
-            for i in range(depth)])
+        self.blocks = nn.ModuleList(
+            [
+                Block(
+                    dim=embed_dim,
+                    num_heads=num_heads,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias,
+                    qk_scale=qk_scale,
+                    drop=drop_rate,
+                    attn_drop=attn_drop_rate,
+                    drop_path=(
+                        drop_path_rate[i]
+                        if isinstance(drop_path_rate, list)
+                        else drop_path_rate
+                    ),
+                )
+                for i in range(depth)
+            ]
+        )
 
     def forward(self, x, pos):
         for _, block in enumerate(self.blocks):
             x = block(x + pos)
         return x
+
 
 def patch_mix(lam, center):
     B, num_group, _ = center.size()
@@ -106,12 +177,13 @@ def patch_mix(lam, center):
         a_group_mask = torch.zeros([num_group - b_group])
         b_group_mask = torch.ones([b_group])
         mask = torch.cat((a_group_mask, b_group_mask), dim=0)[i].unsqueeze(0)
-        if (b == 0):
+        if b == 0:
             random_group_mask = mask
         else:
             random_group_mask = torch.cat((random_group_mask, mask), dim=0)
     random_group_mask = random_group_mask.to(torch.bool)  # [B, G]
     return random_group_mask, b_group
+
 
 class PointTransformer(nn.Module):
     def __init__(self, config, **kwargs):
@@ -125,7 +197,7 @@ class PointTransformer(nn.Module):
         self.num_heads = config.num_heads
 
         self.group_size = config.group_size
-        self.num_group = config.num_group        
+        self.num_group = config.num_group
         # grouper
         self.group_divider = Group(num_group=self.num_group, group_size=self.group_size)
         # define the encoder
@@ -135,16 +207,14 @@ class PointTransformer(nn.Module):
         self.reduce_dim = nn.Identity()
         if self.encoder_dims != self.trans_dim:
             self.reduce_dim = nn.Linear(self.encoder_dims, self.trans_dim)
-        #self.reduce_dim = nn.Linear(self.encoder_dims, self.trans_dim)
-        #self.encoder = Encoder(encoder_channel=self.trans_dim)
+        # self.reduce_dim = nn.Linear(self.encoder_dims, self.trans_dim)
+        # self.encoder = Encoder(encoder_channel=self.trans_dim)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, self.trans_dim))
         self.cls_pos = nn.Parameter(torch.randn(1, 1, self.trans_dim))
 
         self.pos_embed = nn.Sequential(
-            nn.Linear(3, 128),
-            nn.GELU(),
-            nn.Linear(128, self.trans_dim)
+            nn.Linear(3, 128), nn.GELU(), nn.Linear(128, self.trans_dim)
         )
 
         dpr = [x.item() for x in torch.linspace(0, self.drop_path_rate, self.depth)]
@@ -152,10 +222,10 @@ class PointTransformer(nn.Module):
             embed_dim=self.trans_dim,
             depth=self.depth,
             drop_path_rate=dpr,
-            num_heads=self.num_heads
+            num_heads=self.num_heads,
         )
         self.norm = nn.LayerNorm(self.trans_dim)
-        
+
         # self.cls_head_finetune = nn.Sequential(
         #     nn.Linear(self.trans_dim * 2, 256),
         #     nn.ReLU(inplace=True),
@@ -191,74 +261,82 @@ class PointTransformer(nn.Module):
 
     def load_model_from_ckpt(self, bert_ckpt_path):
         ckpt = torch.load(bert_ckpt_path)
-        base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+        base_ckpt = {k.replace("module.", ""): v for k, v in ckpt["base_model"].items()}
         for k in list(base_ckpt.keys()):
-            if k.startswith('transformer_q') and not k.startswith('transformer_q.cls_head'):
-                base_ckpt[k[len('transformer_q.'):]] = base_ckpt[k]
-            elif k.startswith('base_model'):
-                base_ckpt[k[len('base_model.'):]] = base_ckpt[k]
+            if k.startswith("transformer_q") and not k.startswith(
+                "transformer_q.cls_head"
+            ):
+                base_ckpt[k[len("transformer_q.") :]] = base_ckpt[k]
+            elif k.startswith("base_model"):
+                base_ckpt[k[len("base_model.") :]] = base_ckpt[k]
             del base_ckpt[k]
 
         incompatible = self.load_state_dict(base_ckpt, strict=False)
 
         if incompatible.missing_keys:
-            print_log('missing_keys', logger='Transformer')
+            print_log("missing_keys", logger="Transformer")
             print_log(
                 get_missing_parameters_message(incompatible.missing_keys),
-                logger='Transformer'
+                logger="Transformer",
             )
         if incompatible.unexpected_keys:
-            print_log('unexpected_keys', logger='Transformer')
+            print_log("unexpected_keys", logger="Transformer")
             print_log(
                 get_unexpected_parameters_message(incompatible.unexpected_keys),
-                logger='Transformer'
+                logger="Transformer",
             )
 
-        print_log(f'[Transformer] Successful Loading the ckpt from {bert_ckpt_path}', logger='Transformer')
+        print_log(
+            f"[Transformer] Successful Loading the ckpt from {bert_ckpt_path}",
+            logger="Transformer",
+        )
 
-    def perform_mix(self,pts):
+    def perform_mix(self, pts):
         neighborhood, center = self.group_divider(pts)
-        data = torch.cat([center.unsqueeze(2),neighborhood],dim=2)
+        data = torch.cat([center.unsqueeze(2), neighborhood], dim=2)
         lam = np.random.random()
         points = neighborhood + center.unsqueeze(2)  # [B, G, M, 3]
         B, num_group, group_size, _ = points.size()
-        #Determine paired two point clouds
-        data = data.reshape(B//2,2,num_group,group_size+1,-1)
-        data_a = data[:,0].clone()
-        data_b = data[:,1]
-        data_c = data[:,1].clone()
-        
-        center = center.reshape(B//2,2,num_group,-1)
-        centers_a = center[:,0]
-        centers_b = center[:,1]
-        center = center.reshape(B,num_group,-1)
-        
-        points = points.reshape(B//2,2,num_group,group_size,-1)
-        points_a = points[:,0]
-        points_b = points[:,1]
+        # Determine paired two point clouds
+        data = data.reshape(B // 2, 2, num_group, group_size + 1, -1)
+        data_a = data[:, 0].clone()
+        data_b = data[:, 1]
+        data_c = data[:, 1].clone()
 
-        data_a, data_b, data_c = data_a.to('cuda'), data_b.to('cuda'), data_c.to('cuda')
-        points_a, points_b = points_a.to('cuda'), points_b.to('cuda')
+        center = center.reshape(B // 2, 2, num_group, -1)
+        centers_a = center[:, 0]
+        centers_b = center[:, 1]
+        center = center.reshape(B, num_group, -1)
 
-        group_mask, b_group = patch_mix(lam, center[:B//2])
+        points = points.reshape(B // 2, 2, num_group, group_size, -1)
+        points_a = points[:, 0]
+        points_b = points[:, 1]
+
+        data_a, data_b, data_c = data_a.to("cuda"), data_b.to("cuda"), data_c.to("cuda")
+        points_a, points_b = points_a.to("cuda"), points_b.to("cuda")
+
+        group_mask, b_group = patch_mix(lam, center[: B // 2])
         fix_data_1 = torch.zeros_like(data_a)
         fix_data_2 = torch.zeros_like(data_c)
-        
+
         fix_data_1 = data_a.clone()
         fix_data_1[group_mask] = data_c.clone()[group_mask]
         fix_data_2 = data_c.clone()
         fix_data_2[group_mask] = data_a.clone()[group_mask]
-        data = torch.cat([fix_data_1.unsqueeze(1),fix_data_2.unsqueeze(1)],dim=1).reshape(B,num_group, group_size+1,-1)
-        
-        return data[:,:,1:,:], data[:,:,0,:]
+        data = torch.cat(
+            [fix_data_1.unsqueeze(1), fix_data_2.unsqueeze(1)], dim=1
+        ).reshape(B, num_group, group_size + 1, -1)
+
+        return data[:, :, 1:, :], data[:, :, 0, :]
+
     def forward(self, pts, mix=False):
         # divide the point cloud in the same form. This is important
         if mix:
-            neighborhood, center  = self.perform_mix(pts)
+            neighborhood, center = self.perform_mix(pts)
         else:
             neighborhood, center = self.group_divider(pts)
         # encoder the input cloud blocks
-       
+
         group_input_tokens = self.encoder(neighborhood)  # B G N
         group_input_tokens = self.reduce_dim(group_input_tokens)
         # prepare cls
@@ -272,5 +350,5 @@ class PointTransformer(nn.Module):
         x = self.blocks(x, pos)
         x = self.norm(x)
         concat_f = torch.cat([x[:, 0], x[:, 1:].max(1)[0]], dim=-1)
-        
-        return concat_f,x
+
+        return concat_f, x
