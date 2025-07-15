@@ -1,0 +1,13 @@
+termcolor
+easydict
+timm==0.4.12
+path
+diffusers==0.25.0
+wandb
+matplotlib
+CLIP
+peft
+transformers
+einops
+h5py
+deepspeed==0.14.0

@@ -1,0 +1,9 @@
+argparse
+opencv-python==4.11.0.86
+pyyaml
+scipy
+tensorboardX
+tqdm
+transforms3d
+scikit-learn
+numpy==1.23.0
